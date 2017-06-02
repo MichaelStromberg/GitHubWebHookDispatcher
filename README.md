@@ -21,3 +21,7 @@ Note that the server will open port 7000 by default (we'll make this configurabl
 http://1.2.3.4:7000/api/hooks
 
 where 1.2.3.4 is the IP of the machine running the GitHubWebHookDispatcher.
+
+## Sequence diagram
+
+<img align="center" src="https://github.com/MichaelStromberg/GitHubWebHookDispatcher/wiki/images/GitHubWebHookDispatcherUmlSequenceDiagram.png" width="600" />
