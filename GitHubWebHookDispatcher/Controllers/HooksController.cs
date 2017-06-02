@@ -51,6 +51,8 @@ namespace GitHubWebHookDispatcher.Controllers
                 return;
             }
 
+            _logger.LogInformation($"Script Path: {scriptPath}");
+
             Task.Run(() => RunScript(scriptPath));
         }
 
