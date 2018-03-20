@@ -68,7 +68,7 @@ namespace GitHubWebHookDispatcher.Controllers
         {
             if (string.IsNullOrEmpty(branch)) return null;
             int slashIndex = branch.LastIndexOf("/", StringComparison.Ordinal);
-            return slashIndex == -1 ? null : branch.Substring(slashIndex + 1);
+            return slashIndex == -1 ? branch : branch.Substring(slashIndex + 1);
         }
 
         private static string GetRepositoryUrl(string compare)
