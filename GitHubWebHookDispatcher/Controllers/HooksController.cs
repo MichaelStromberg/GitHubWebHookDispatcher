@@ -41,9 +41,10 @@ namespace GitHubWebHookDispatcher.Controllers
                 return;
             }
 
-            string branch = GetBranch(webhook.@ref);
+            string branch      = GetBranch(webhook.@ref);
+            string shortBranch = GetShortBranch(branch);
 
-            _logger.LogInformation($"Repository URL: {repositoryUrl}, branch: {branch}");
+            _logger.LogInformation($"Repository URL: {repositoryUrl}, branch: {branch} ({shortBranch})");
 
             if (!_repositoryToScriptPath.TryGetValue(repositoryUrl, out string scriptPath))
             {
@@ -53,7 +54,7 @@ namespace GitHubWebHookDispatcher.Controllers
 
             _logger.LogInformation($"Script Path: {scriptPath}");
 
-            Task.Run(() => RunScript(scriptPath, branch));
+            Task.Run(() => RunScript(scriptPath, branch, shortBranch));
         }
 
         private static string GetBranch(string refs)
@@ -61,6 +62,13 @@ namespace GitHubWebHookDispatcher.Controllers
             const string refsHeads = "refs/heads/";
             if (string.IsNullOrEmpty(refs) || !refs.StartsWith(refsHeads)) return null;
             return refs.Substring(refsHeads.Length);
+        }
+
+        private static string GetShortBranch(string branch)
+        {
+            if (string.IsNullOrEmpty(branch)) return null;
+            int slashIndex = branch.LastIndexOf("/", StringComparison.Ordinal);
+            return slashIndex == -1 ? null : branch.Substring(slashIndex);
         }
 
         private static string GetRepositoryUrl(string compare)
@@ -71,7 +79,7 @@ namespace GitHubWebHookDispatcher.Controllers
             return compareIndex == -1 ? null : compare.Substring(0, compareIndex);
         }
 
-        private void RunScript(string batchPath, string branch)
+        private void RunScript(string batchPath, string branch, string shortBranch)
         {
             _logger.LogInformation($"Running the script ({batchPath}) associated with the repository.");
 
@@ -80,7 +88,7 @@ namespace GitHubWebHookDispatcher.Controllers
                 StartInfo =
                 {
                     FileName         = batchPath,
-                    Arguments        = branch,
+                    Arguments        = $"{branch} {shortBranch}",
                     WorkingDirectory = Path.GetDirectoryName(batchPath)
                 }
             };
