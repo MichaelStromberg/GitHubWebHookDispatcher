@@ -33,7 +33,7 @@ namespace GitHubWebHookDispatcher.Controllers
                 return;
             }
 
-            var repositoryUrl = GetRepositoryUrl(webhook.compare);
+            string repositoryUrl = GetRepositoryUrl(webhook.compare);
 
             if (repositoryUrl == null)
             {
@@ -41,11 +41,11 @@ namespace GitHubWebHookDispatcher.Controllers
                 return;
             }
 
-            _logger.LogInformation($"Repository URL: {repositoryUrl}");
+            string branch = GetBranch(webhook.@ref);
 
-            string scriptPath;
+            _logger.LogInformation($"Repository URL: {repositoryUrl}, branch: {branch}");
 
-            if (!_repositoryToScriptPath.TryGetValue(repositoryUrl, out scriptPath))
+            if (!_repositoryToScriptPath.TryGetValue(repositoryUrl, out string scriptPath))
             {
                 _logger.LogError($"Unable to find repository ({repositoryUrl}) in the dictionary. Skipping dispatch.");
                 return;
@@ -53,7 +53,14 @@ namespace GitHubWebHookDispatcher.Controllers
 
             _logger.LogInformation($"Script Path: {scriptPath}");
 
-            Task.Run(() => RunScript(scriptPath));
+            Task.Run(() => RunScript(scriptPath, branch));
+        }
+
+        private static string GetBranch(string refs)
+        {
+            const string refsHeads = "refs/heads/";
+            if (string.IsNullOrEmpty(refs) || !refs.StartsWith(refsHeads)) return null;
+            return refs.Substring(refsHeads.Length);
         }
 
         private static string GetRepositoryUrl(string compare)
@@ -61,12 +68,10 @@ namespace GitHubWebHookDispatcher.Controllers
             if (string.IsNullOrEmpty(compare)) return null;
 
             int compareIndex = compare.IndexOf("/compare", StringComparison.Ordinal);
-            if (compareIndex == -1) return null;
-
-            return compare.Substring(0, compareIndex);
+            return compareIndex == -1 ? null : compare.Substring(0, compareIndex);
         }
 
-        private void RunScript(string batchPath)
+        private void RunScript(string batchPath, string branch)
         {
             _logger.LogInformation($"Running the script ({batchPath}) associated with the repository.");
 
@@ -75,6 +80,7 @@ namespace GitHubWebHookDispatcher.Controllers
                 StartInfo =
                 {
                     FileName         = batchPath,
+                    Arguments        = branch,
                     WorkingDirectory = Path.GetDirectoryName(batchPath)
                 }
             };
