@@ -12,7 +12,7 @@ namespace GitHubWebHookDispatcher
     {
         public Startup(IHostingEnvironment env)
         {
-            var builder = new ConfigurationBuilder()
+            IConfigurationBuilder builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", false, true)
                 .AddJsonFile($"appsettings.{env.EnvironmentName}.json", true)
@@ -39,7 +39,7 @@ namespace GitHubWebHookDispatcher
             var repositoryToScriptPath = new Dictionary<string, string>();
             var scriptRepositoryPairs  = Configuration.GetSection("ScriptRepositoryPairs").Get<List<ScriptRepositoryPair>>();
 
-            foreach (var pair in scriptRepositoryPairs)
+            foreach (ScriptRepositoryPair pair in scriptRepositoryPairs)
             {
                 repositoryToScriptPath[pair.RepositoryUrl] = pair.FullScriptPath;
             }

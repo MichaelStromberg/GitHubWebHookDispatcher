@@ -16,6 +16,7 @@ namespace GitHubWebHookDispatcher.Controllers
     {
         private readonly Dictionary<string, string> _repositoryToScriptPath;
         private readonly ILogger<HooksController> _logger;
+        private static readonly Dictionary<string, object> KeyToLockObjects = new Dictionary<string, object>();
 
         public HooksController(IOptions<ScriptRepositoryOptions> options, ILogger<HooksController> logger)
         {
@@ -81,22 +82,32 @@ namespace GitHubWebHookDispatcher.Controllers
 
         private void RunScript(string batchPath, string branch, string shortBranch)
         {
-            _logger.LogInformation($"Running the script ({batchPath}) associated with the repository.");
-
-            var process = new Process
+            if (!KeyToLockObjects.TryGetValue(batchPath, out object lockObject))
             {
-                StartInfo =
+                lockObject = new object();
+                KeyToLockObjects[batchPath] = lockObject;
+            }
+
+            // handle different repos in parallel, but wait if the same repo is being analyzed
+            lock (lockObject)
+            {
+                _logger.LogInformation($"Running the script ({batchPath}) associated with the repository.");
+
+                var process = new Process
                 {
-                    FileName         = batchPath,
-                    Arguments        = $"{branch} {shortBranch}",
-                    WorkingDirectory = Path.GetDirectoryName(batchPath)
-                }
-            };
+                    StartInfo =
+                    {
+                        FileName         = batchPath,
+                        Arguments        = $"{branch} {shortBranch}",
+                        WorkingDirectory = Path.GetDirectoryName(batchPath)
+                    }
+                };
 
-            process.Start();
-            process.WaitForExit();
+                process.Start();
+                process.WaitForExit();
 
-            _logger.LogInformation($"Finished executing the script ({batchPath}).");
+                _logger.LogInformation($"Finished executing the script ({batchPath}).");
+            }
         }
     }
 }
