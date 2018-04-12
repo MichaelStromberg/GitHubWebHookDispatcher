@@ -17,9 +17,12 @@ namespace GitHubWebHookDispatcher.Controllers
     public class HooksController : Controller
     {
         private readonly Dictionary<string, string> _repositoryToScriptPath;
+
         private readonly ILogger<HooksController> _logger;
+
         private static readonly Dictionary<string, object> KeyToLockObjects = new Dictionary<string, object>();
         private readonly MD5 _md5Hash = MD5.Create();
+        private readonly object _lock = new object();
 
         public HooksController(IOptions<ScriptRepositoryOptions> options, ILogger<HooksController> logger)
         {
@@ -33,7 +36,7 @@ namespace GitHubWebHookDispatcher.Controllers
         {
             if (webhook == null)
             {
-                _logger.LogDebug("Webhook is null. Skipping dispatch.");
+                lock(_lock) _logger.LogDebug("Webhook is null. Skipping dispatch.");
                 return;
             }
 
@@ -41,24 +44,25 @@ namespace GitHubWebHookDispatcher.Controllers
 
             if (repositoryUrl == null)
             {
-                _logger.LogDebug("repositoryUrl is null. Skipping dispatch.");
+                lock (_lock) _logger.LogDebug("repositoryUrl is null. Skipping dispatch.");
                 return;
             }
 
             string branch      = GetBranch(webhook.@ref);
+            string key         = GetMd5Checksum($"{repositoryUrl}/{branch}");
             string shortBranch = GetShortBranch(branch);
 
-            _logger.LogInformation($"Repository URL: {repositoryUrl}, branch: {branch} ({shortBranch})");
+            lock (_lock) _logger?.LogInformation($"Repository URL: {repositoryUrl}, branch: {branch} ({shortBranch}), key: {key}");
 
             if (!_repositoryToScriptPath.TryGetValue(repositoryUrl, out string scriptPath))
             {
-                _logger.LogError($"Unable to find repository ({repositoryUrl}) in the dictionary. Skipping dispatch.");
+                lock (_lock) _logger?.LogError($"Unable to find repository ({repositoryUrl}) in the dictionary. Skipping dispatch.");
                 return;
             }
 
-            _logger.LogInformation($"Script Path: {scriptPath}");
+            lock (_lock) _logger?.LogInformation($"Script Path: {scriptPath}");
 
-            Task.Run(() => RunScript(scriptPath, branch, shortBranch));
+            Task.Run(() => RunScript(scriptPath, branch, shortBranch, key));
         }
 
         private static string GetBranch(string refs)
@@ -87,19 +91,24 @@ namespace GitHubWebHookDispatcher.Controllers
         {
             var sb = new StringBuilder();
             var data = _md5Hash.ComputeHash(Encoding.ASCII.GetBytes(s));
-            foreach (var b in data) sb.Append(b.ToString("x2"));
+            foreach (byte b in data) sb.Append(b.ToString("x2"));
             return sb.ToString();
         }
 
-        private void RunScript(string batchPath, string branch, string shortBranch)
+        /// <summary>
+        /// Runs the analysis script
+        /// </summary>
+        /// <param name="batchPath">Used to execute the right script</param>
+        /// <param name="branch">Used for git checkout</param>
+        /// <param name="shortBranch">Used for the title of the project</param>
+        /// <param name="key">Used to store the project in SonarQube</param>
+        private void RunScript(string batchPath, string branch, string shortBranch, string key)
         {
             if (!KeyToLockObjects.TryGetValue(batchPath, out object lockObject))
             {
                 lockObject = new object();
                 KeyToLockObjects[batchPath] = lockObject;
             }
-
-            var md5 = GetMd5Checksum(batchPath + branch);
 
             // handle different repos in parallel, but wait if the same repo is being analyzed
             lock (lockObject)
@@ -111,7 +120,7 @@ namespace GitHubWebHookDispatcher.Controllers
                     StartInfo =
                     {
                         FileName         = batchPath,
-                        Arguments        = $"{branch} {shortBranch} {md5}",
+                        Arguments        = $"{branch} {shortBranch} {key}",
                         WorkingDirectory = Path.GetDirectoryName(batchPath)
                     }
                 };
