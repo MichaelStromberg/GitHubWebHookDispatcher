@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using GitHubWebHookDispatcher.Models;
 using GitHubWebHookDispatcher.Options;
@@ -17,6 +19,7 @@ namespace GitHubWebHookDispatcher.Controllers
         private readonly Dictionary<string, string> _repositoryToScriptPath;
         private readonly ILogger<HooksController> _logger;
         private static readonly Dictionary<string, object> KeyToLockObjects = new Dictionary<string, object>();
+        private readonly MD5 _md5Hash = MD5.Create();
 
         public HooksController(IOptions<ScriptRepositoryOptions> options, ILogger<HooksController> logger)
         {
@@ -80,6 +83,14 @@ namespace GitHubWebHookDispatcher.Controllers
             return compareIndex == -1 ? null : compare.Substring(0, compareIndex);
         }
 
+        private string GetMd5Checksum(string s)
+        {
+            var sb = new StringBuilder();
+            var data = _md5Hash.ComputeHash(Encoding.ASCII.GetBytes(s));
+            foreach (var b in data) sb.Append(b.ToString("x2"));
+            return sb.ToString();
+        }
+
         private void RunScript(string batchPath, string branch, string shortBranch)
         {
             if (!KeyToLockObjects.TryGetValue(batchPath, out object lockObject))
@@ -87,6 +98,8 @@ namespace GitHubWebHookDispatcher.Controllers
                 lockObject = new object();
                 KeyToLockObjects[batchPath] = lockObject;
             }
+
+            var md5 = GetMd5Checksum(batchPath + branch);
 
             // handle different repos in parallel, but wait if the same repo is being analyzed
             lock (lockObject)
@@ -98,7 +111,7 @@ namespace GitHubWebHookDispatcher.Controllers
                     StartInfo =
                     {
                         FileName         = batchPath,
-                        Arguments        = $"{branch} {shortBranch}",
+                        Arguments        = $"{branch} {shortBranch} {md5}",
                         WorkingDirectory = Path.GetDirectoryName(batchPath)
                     }
                 };
