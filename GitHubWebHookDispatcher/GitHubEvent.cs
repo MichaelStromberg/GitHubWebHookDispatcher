@@ -1,4 +1,4 @@
-﻿namespace GitHubWebHookDispatcher.Models
+﻿namespace GitHubWebHook
 {
     public class GitHubEvent
     {

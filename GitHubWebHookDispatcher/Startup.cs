@@ -1,28 +1,20 @@
 ﻿using System.Collections.Generic;
-using GitHubWebHookDispatcher.Options;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
-namespace GitHubWebHookDispatcher
+namespace GitHubWebHook
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
-        {
-            IConfigurationBuilder builder = new ConfigurationBuilder()
-                .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", false, true)
-                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", true)
-                .AddEnvironmentVariables();
-            Configuration = builder.Build();
-        }
+        public Startup(IConfiguration configuration) => Configuration = configuration;
 
-        public IConfigurationRoot Configuration { get; }
+        public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
+        // ReSharper disable once UnusedMember.Global
         public void ConfigureServices(IServiceCollection services)
         {
             var repositoryToScriptPath = GetScriptRepositoryDictionary();
@@ -30,14 +22,13 @@ namespace GitHubWebHookDispatcher
             services.Configure<ScriptRepositoryOptions>(
                 options => options.RepositoryToScriptPath = repositoryToScriptPath);
 
-            // Add framework services.
-            services.AddMvc();
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
 
         private Dictionary<string, string> GetScriptRepositoryDictionary()
         {
             var repositoryToScriptPath = new Dictionary<string, string>();
-            var scriptRepositoryPairs  = Configuration.GetSection("ScriptRepositoryPairs").Get<List<ScriptRepositoryPair>>();
+            var scriptRepositoryPairs = Configuration.GetSection("ScriptRepositoryPairs").Get<List<ScriptRepositoryPair>>();
 
             foreach (ScriptRepositoryPair pair in scriptRepositoryPairs)
             {
@@ -48,11 +39,10 @@ namespace GitHubWebHookDispatcher
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        // ReSharper disable once UnusedMember.Global
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
-            loggerFactory.AddDebug();
-
+            if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
             app.UseMvc();
         }
     }

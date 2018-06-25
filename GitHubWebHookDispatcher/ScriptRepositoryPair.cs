@@ -1,4 +1,4 @@
-﻿namespace GitHubWebHookDispatcher.Options
+﻿namespace GitHubWebHook
 {
     public class ScriptRepositoryPair
     {
