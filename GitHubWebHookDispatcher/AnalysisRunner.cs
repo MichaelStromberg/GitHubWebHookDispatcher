@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 
-namespace GitHubWebHook
+namespace GitHubWebHookDispatcher
 {
     public class AnalysisRunner
     {
@@ -28,6 +28,12 @@ namespace GitHubWebHook
             {
                 AnalysisConfiguration config = _queue.Take();
                 _logger.LogInformation($"Running the script ({config.ScriptPath}) associated with the repository.");
+
+                if (!File.Exists(config.ScriptPath))
+                {
+                    _logger.LogError($"ERROR: The script path ({config.ScriptPath}) does not exist.");
+                    continue;
+                }
 
                 var process = new Process
                 {

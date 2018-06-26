@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
-namespace GitHubWebHook
+namespace GitHubWebHookDispatcher
 {
     public class Program
     {

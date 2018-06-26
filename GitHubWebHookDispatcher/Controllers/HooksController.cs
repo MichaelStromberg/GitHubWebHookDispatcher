@@ -7,8 +7,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace GitHubWebHook.Controllers
+namespace GitHubWebHookDispatcher.Controllers
 {
+    /// <inheritdoc />
+    /// <summary>
+    /// Receives webhooks from a GitHub repo
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [SuppressMessage("ReSharper", "InconsistentlySynchronizedField")]
@@ -26,7 +30,19 @@ namespace GitHubWebHook.Controllers
             _runner                 = new AnalysisRunner(logger);
         }
 
-        // POST api/hooks
+        /// <summary>
+        /// Submits a webhook
+        /// </summary>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     {
+        ///        "ref": "refs/heads/develop",
+        ///        "compare": "https://git.illumina.com/Bioinformatics/Nirvana/compare/82040380f689...6176f4192726"
+        ///     }
+        ///
+        /// </remarks>
+        /// <param name="webhook"></param>
         [HttpPost]
         public void Submit([FromBody]GitHubEvent webhook)
         {

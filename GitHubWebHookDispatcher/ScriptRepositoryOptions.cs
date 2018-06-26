@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace GitHubWebHook
+namespace GitHubWebHookDispatcher
 {
     public class ScriptRepositoryOptions
     {

@@ -1,4 +1,4 @@
-﻿namespace GitHubWebHook
+﻿namespace GitHubWebHookDispatcher
 {
     public class AnalysisConfiguration
     {
