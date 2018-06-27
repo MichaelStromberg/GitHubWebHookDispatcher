@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore;
+﻿using System.Diagnostics;
+using System.IO;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.WindowsServices;
 
 namespace GitHubWebHookDispatcher
 {
@@ -7,11 +10,13 @@ namespace GitHubWebHookDispatcher
     {
         public static void Main(string[] args)
         {
-            CreateWebHostBuilder(args).Build().Run();
-        }
+            string pathToExe         = Process.GetCurrentProcess().MainModule.FileName;
+            string pathToContentRoot = Path.GetDirectoryName(pathToExe);
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+            IWebHost host = WebHost.CreateDefaultBuilder(args).UseContentRoot(pathToContentRoot).UseStartup<Startup>()
+                .Build();
+
+            host.RunAsService();
+        }
     }
 }
