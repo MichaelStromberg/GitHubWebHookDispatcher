@@ -13,7 +13,7 @@ namespace GitHubWebHookDispatcher
             string pathToExe         = Process.GetCurrentProcess().MainModule.FileName;
             string pathToContentRoot = Path.GetDirectoryName(pathToExe);
 
-            IWebHost host = WebHost.CreateDefaultBuilder(args).UseContentRoot(pathToContentRoot).UseStartup<Startup>()
+            IWebHost host = WebHost.CreateDefaultBuilder(args).UseContentRoot(pathToContentRoot).UseStartup<Startup>().UseUrls("http://0.0.0.0:7000/")
                 .Build();
 
             host.RunAsService();
