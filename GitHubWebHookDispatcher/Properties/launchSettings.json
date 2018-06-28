@@ -24,7 +24,17 @@
       "applicationUrl": "http://0.0.0.0:7000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "ScriptRepositoryPairs": [
+        {
+          "FullScriptPath": "D:\\Projects\\AnalyzeNirvana.bat",
+          "RepositoryUrl": "https://git.illumina.com/Bioinformatics/Nirvana"
+        },
+        {
+          "FullScriptPath": "D:\\Projects\\AnalyzePisces.bat",
+          "RepositoryUrl": "https://git.illumina.com/Bioinformatics/Pisces5"
+        }
+      ]
     }
   }
 }
