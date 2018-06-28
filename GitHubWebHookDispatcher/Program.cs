@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System;
+using System.Reflection;
 using Logging;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
@@ -11,8 +13,10 @@ namespace GitHubWebHookDispatcher
     {
         public static void Main(string[] args)
         {
-            string pathToExe         = Process.GetCurrentProcess().MainModule.FileName;
+            string pathToExe         = Assembly.GetExecutingAssembly().Location;
             string pathToContentRoot = Path.GetDirectoryName(pathToExe);
+			
+			Console.WriteLine($"Content root: {pathToContentRoot}"); 
 
             IWebHost host = WebHost.CreateDefaultBuilder(args)
                 .UseContentRoot(pathToContentRoot)
