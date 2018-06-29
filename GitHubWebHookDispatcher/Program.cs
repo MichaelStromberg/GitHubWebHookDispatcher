@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System;
+﻿using System.IO;
 using System.Reflection;
 using Logging;
 using Microsoft.AspNetCore;
@@ -15,16 +13,16 @@ namespace GitHubWebHookDispatcher
         {
             string pathToExe         = Assembly.GetExecutingAssembly().Location;
             string pathToContentRoot = Path.GetDirectoryName(pathToExe);
-			
-			Console.WriteLine($"Content root: {pathToContentRoot}"); 
+            string loggingDir        = Path.Combine(pathToContentRoot, "Logs");
 
             IWebHost host = WebHost.CreateDefaultBuilder(args)
                 .UseContentRoot(pathToContentRoot)
-                .ConfigureLogging(builder => builder.AddFile())
+                .ConfigureLogging(builder => builder.AddFile(options => options.LogDirectory = loggingDir))
                 .UseStartup<Startup>()
                 .UseUrls("http://0.0.0.0:7000/")
                 .Build();
 
+            //host.Run();
             host.RunAsService();
         }
     }

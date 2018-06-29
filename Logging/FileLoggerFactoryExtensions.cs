@@ -23,10 +23,8 @@ namespace Logging
 
         public static ILoggingBuilder AddFile(this ILoggingBuilder builder, Action<FileLoggerOptions> configure)
         {
-            if (configure == null)
-            {
-                throw new ArgumentNullException(nameof(configure));
-            }
+            if (configure == null) throw new ArgumentNullException(nameof(configure));
+
             builder.AddFile();
             builder.Services.Configure(configure);
 
